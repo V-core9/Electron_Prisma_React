@@ -35,6 +35,11 @@ ipcMain.on('ipc-example', async (event, arg) => {
   event.reply('ipc-example', msgTemplate('pong'));
 });
 
+ipcMain.on('login-user', async (event, arg) => {
+  console.log(event, arg);
+  event.reply('login-user', `Login Attempt Made ${JSON.stringify(arg)}`);
+});
+
 if (process.env.NODE_ENV === 'production') {
   const sourceMapSupport = require('source-map-support');
   sourceMapSupport.install();
@@ -171,7 +176,7 @@ if (!isDev) {
   }
 }
 
-const platformToExecutables: Record<string, any> = {
+const platformToExecutables: Record<string, unknown> = {
   win32: {
     migrationEngine:
       'node_modules/@prisma/engines/migration-engine-windows.exe',

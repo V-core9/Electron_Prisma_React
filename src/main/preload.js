@@ -39,6 +39,9 @@ const api = {
         ipcRenderer.once(channel, (event, ...args) => func(...args));
       }
     },
+    async loginUser(email) {
+      ipcRenderer.send('login-user', { email });
+    },
   },
 };
 

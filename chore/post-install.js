@@ -17,4 +17,5 @@ const options = {
 };
 
 const results = replace.sync(options);
+// eslint-disable-next-line no-console
 console.log('build script: prisma fix', results);

@@ -17,6 +17,22 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
+  padding: 0;
+  margin: 0;
+}
+
+.MuiBox-root {
+  width: 100%;
+}
+
+.MuiContainer-root {
+  margin: 0;
+  overflow-y: scroll;
+  height: calc(100% - 4em);
+}
+
+main.MuiBox-root {
+  overflow: hidden;
 }
 
 button {
@@ -59,4 +75,12 @@ a:hover {
   justify-content: center;
   align-items: center;
   margin: 20px 0;
+}
+
+div#root {
+  overflow: auto;
+  display: flex;
+  height: 100%;
+  width: 100%;
+  margin: 0;
 }
