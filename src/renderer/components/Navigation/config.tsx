@@ -35,6 +35,11 @@ const navConfig: NavConfigInterface = {
       url: '/hello',
     },
     {
+      title: 'Domains',
+      icon: <SettingsIcon />,
+      url: '/domains-manager',
+    },
+    {
       title: 'Settings',
       icon: <SettingsIcon />,
       url: '/settings',

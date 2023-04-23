@@ -1,5 +1,6 @@
 const { contextBridge, ipcRenderer } = require('electron');
 const { PrismaClient } = require('@prisma/client');
+const whois = require('whois');
 
 const dbPath = ipcRenderer.sendSync('config:get-prisma-db-path');
 const qePath = ipcRenderer.sendSync('config:get-prisma-qe-path');
@@ -41,6 +42,11 @@ const api = {
     },
     async loginUser(email) {
       ipcRenderer.send('login-user', { email });
+    },
+    async whois(domain) {
+      whois.lookup(domain, (err, data) => {
+        ipcRenderer.send('whois', !err ? { data } : { err });
+      });
     },
   },
 };

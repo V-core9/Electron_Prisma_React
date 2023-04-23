@@ -10,7 +10,7 @@ import MenuIcon from '@mui/icons-material/Menu';
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import MuiDrawer from '@mui/material/Drawer';
 import List from '@mui/material/List';
-import Container from '@mui/material/Container';
+import Grid from '@mui/material/Grid';
 import Divider from '@mui/material/Divider';
 import MuiAppBar, { AppBarProps as MuiAppBarProps } from '@mui/material/AppBar';
 
@@ -77,9 +77,12 @@ export default function DashboardLayout({
   title: string;
   children: JSX.Element;
 }) {
-  const [open, setOpen] = useState(true);
+  const localStorageOpen = localStorage.getItem('navigation_open') === 'true';
+  const [open, setOpen] = useState(localStorageOpen);
   const toggleDrawer = () => {
-    setOpen(!open);
+    const newOpen = !open;
+    setOpen(newOpen);
+    localStorage.setItem('navigation_open', String(newOpen));
   };
 
   return (
@@ -152,7 +155,15 @@ export default function DashboardLayout({
           }}
         >
           <Toolbar />
-          <Container maxWidth="lg">{children}</Container>
+          <Grid
+            padding={1}
+            sx={{
+              height: 'calc(100% - 4em)',
+              overflow: 'auto',
+            }}
+          >
+            {children}
+          </Grid>
         </Box>
       </Box>
     </ThemeProvider>

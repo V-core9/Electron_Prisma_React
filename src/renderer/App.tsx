@@ -1,7 +1,14 @@
 import { MemoryRouter as Router, Routes, Route } from 'react-router-dom';
 import './App.css';
 
-import { Settings, Hello, SamplePage, Dashboard, NoPage } from './pages';
+import {
+  Settings,
+  Hello,
+  SamplePage,
+  Dashboard,
+  NoPage,
+  Domains,
+} from './pages';
 
 export default function App() {
   return (
@@ -12,6 +19,7 @@ export default function App() {
         <Route path="/hello" element={<Hello />} />
         <Route path="/Settings" element={<Settings />} />
         <Route path="/sample-page" element={<SamplePage />} />
+        <Route path="/domains-manager" element={<Domains />} />
         <Route path="*" element={<NoPage />} />
       </Routes>
     </Router>

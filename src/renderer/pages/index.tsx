@@ -4,4 +4,6 @@ import SamplePage from './SamplePage';
 import Dashboard from './Dashboard';
 import NoPage from './Error/NoPage';
 
-export { Hello, Settings, SamplePage, NoPage, Dashboard };
+import Domains from './Domains';
+
+export { Hello, Settings, SamplePage, NoPage, Dashboard, Domains };
