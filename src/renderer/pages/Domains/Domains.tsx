@@ -25,6 +25,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import AlarmIcon from '@mui/icons-material/Alarm';
 import ArrowBackIosNewIcon from '@mui/icons-material/ArrowBackIosNew';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
+import Drawer from '@mui/material/Drawer';
 
 import DashboardLayout from '../../layouts/dashboard';
 import OSApi from '../../os-api';
@@ -71,6 +72,8 @@ export default function Domains() {
 
   const [perPage, setPerPage] = useState<number>(10);
   const [currentPage, setCurrentPage] = useState<number>(1);
+
+  const [newDomainForm, setNewDomainForm] = useState(false);
 
   const handleChangePerPage = (event: SelectChangeEvent) => {
     setPerPage(event.target.value as number);
@@ -152,9 +155,21 @@ export default function Domains() {
             textAlign="end"
             sx={{ display: 'flex', justifyContent: 'flex-end', gap: '.5em' }}
           >
-            <Button variant="contained" endIcon={<AddBoxIcon />}>
+            <Button
+              variant="contained"
+              onClick={() => setNewDomainForm(true)}
+              endIcon={<AddBoxIcon />}
+            >
               New
             </Button>
+            <Drawer
+              anchor="right"
+              open={newDomainForm}
+              onClose={() => setNewDomainForm(false)}
+              sx={{ zIndex: 9000 }}
+            >
+              YEAAA
+            </Drawer>
             <Button
               variant="contained"
               endIcon={<SmartToyIcon />}
