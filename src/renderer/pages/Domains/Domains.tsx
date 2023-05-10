@@ -30,7 +30,16 @@ import Drawer from '@mui/material/Drawer';
 import DashboardLayout from '../../layouts/dashboard';
 import OSApi from '../../os-api';
 
-const sortQuery = (q: string, perPage: number, page: number) => ({
+interface Domain {
+  id: number;
+  url: string;
+  title?: string;
+  description?: string;
+  created_at: Date;
+  updated_at: Date;
+}
+
+const sortQuery = (q: string | undefined, perPage: number, page: number) => ({
   where: {
     ...(q && {
       url: {
@@ -42,7 +51,7 @@ const sortQuery = (q: string, perPage: number, page: number) => ({
   skip: (page || 0) * (perPage || 5),
 });
 
-const sortQueryCount = (q: string) => ({
+const sortQueryCount = (q: string | undefined) => ({
   where: {
     ...(q && {
       url: {
@@ -55,9 +64,11 @@ const sortQueryCount = (q: string) => ({
 const fetchSearchCallback = async (queryString = '', perPage = 5, page = 1) => {
   console.log('fetched search callback', queryString);
   const data = await OSApi.prisma().domain.findMany(
-    sortQuery(queryString, perPage, page - 1)
+    sortQuery(queryString !== '' ? queryString : undefined, perPage, page - 1)
   );
-  const count = await OSApi.prisma().domain.count(sortQueryCount(queryString));
+  const count = await OSApi.prisma().domain.count(
+    sortQueryCount(queryString !== '' ? queryString : undefined)
+  );
 
   return { data, count };
 };
@@ -65,8 +76,8 @@ const fetchSearchCallback = async (queryString = '', perPage = 5, page = 1) => {
 let userInputDelayTimer: null | ReturnType<typeof setTimeout> = null;
 
 export default function Domains() {
-  const [searchQ, setSearchQ] = useState<null | string>(null);
-  const [domains, setDomains] = useState<[]>([]);
+  const [searchQ, setSearchQ] = useState<string>('');
+  const [domains, setDomains] = useState<unknown[] | Domain[]>([]);
   const [resultCount, setResultCount] = useState<number>(0);
   const [isLoadingList, setIsLoadingList] = useState<boolean>(false);
 
@@ -76,16 +87,16 @@ export default function Domains() {
   const [newDomainForm, setNewDomainForm] = useState(false);
 
   const handleChangePerPage = (event: SelectChangeEvent) => {
-    setPerPage(event.target.value as number);
+    setPerPage(parseInt(event.target.value, 10));
     setCurrentPage(1);
   };
 
-  const fetch = async () => {
+  const fetch = async (val: any) => {
     setIsLoadingList(true);
     console.log('SEARCHING', JSON.stringify(searchQ));
-    const rez = await fetchSearchCallback(searchQ, perPage, currentPage);
+    const rez = await fetchSearchCallback(val, perPage, currentPage);
     console.log(rez);
-    setDomains(rez.data);
+    setDomains(rez?.data);
     setResultCount(rez.count);
     setIsLoadingList(false);
   };
@@ -98,11 +109,11 @@ export default function Domains() {
 
     await OSApi.prisma().domain.create(e);
 
-    await fetch();
+    await fetch(searchQ);
   };
 
   React.useEffect(() => {
-    if (!isLoadingList) fetch();
+    if (!isLoadingList) fetch(searchQ);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [perPage, currentPage]);
 
@@ -114,8 +125,10 @@ export default function Domains() {
     setCurrentPage(1);
     setSearchQ(e.target.value);
 
+    const val = e.target.value;
+
     userInputDelayTimer = setTimeout(() => {
-      fetch();
+      fetch(val);
     }, 1000);
   };
 
@@ -220,7 +233,7 @@ export default function Domains() {
               }}
             >
               {domains?.map((domain) => {
-                const { id, url } = domain;
+                const { id, url } = domain as Domain;
                 return (
                   <Grid xs={12} key={id}>
                     <Paper>{url}</Paper>
@@ -270,7 +283,9 @@ export default function Domains() {
                       id="current-page-select"
                       value={String(currentPage)}
                       label="Current Page"
-                      onChange={(e) => setCurrentPage(e.target.value as number)}
+                      onChange={(e) =>
+                        setCurrentPage(parseInt(e.target.value, 10))
+                      }
                     >
                       {paginationSelectOptions.map((i, j) => (
                         <MenuItem value={i}>{i}</MenuItem>
