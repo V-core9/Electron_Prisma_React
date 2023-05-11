@@ -48,7 +48,9 @@ export interface Domain {
   description?: string;
   created_at: Date;
   updated_at: Date;
+
   expanded?: boolean;
+  selected?: boolean;
 }
 
 const dbQueryPrep = {
@@ -94,7 +96,11 @@ const fetchDomainsList = async (queryString = '', perPage = 5, page = 1) => {
 let userInputDelayTimer: null | ReturnType<typeof setTimeout> = null;
 
 const createDomainsData = (data: unknown[]) =>
-  data?.map((i: unknown) => ({ ...(i ?? i), expanded: false }));
+  data?.map((i: unknown) => ({
+    ...(i ?? i),
+    expanded: false,
+    selected: false,
+  }));
 
 export default function Domains() {
   const [searchQ, setSearchQ] = useState<string>('');
@@ -111,6 +117,18 @@ export default function Domains() {
       newDomains.push({
         ...(dom ?? dom),
         ...(dom?.url === domain.url && { expanded: !dom?.expanded }),
+      })
+    );
+
+    setDomains(newDomains);
+  };
+
+  const selectDomain = (domain: Domain) => {
+    const newDomains: Domain[] = [];
+    domains?.map((dom) =>
+      newDomains.push({
+        ...(dom ?? dom),
+        ...(dom?.url === domain.url && { selected: !dom?.selected }),
       })
     );
 
@@ -276,7 +294,8 @@ export default function Domains() {
                       <Grid sx={{ maxWidth: 80 }}>
                         <Checkbox
                           inputProps={{ 'aria-label': 'Checkbox demo' }}
-                          defaultChecked
+                          checked={domain.selected || false}
+                          onChange={(e) => selectDomain(domain)}
                         />
                       </Grid>
                       <Grid sx={{ flex: 1 }} key={id}>
