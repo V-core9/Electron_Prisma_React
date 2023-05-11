@@ -29,7 +29,7 @@ export default function SamplePage() {
             </Paper>
           </Grid>
         </Grid>
-        <Copyright sx={{ pt: 4 }} />
+        <Copyright />
       </>
     </DashboardLayout>
   );

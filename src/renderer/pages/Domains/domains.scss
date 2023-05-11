@@ -1,0 +1,11 @@
+label {
+  &#domains_search_input {
+    font-size: 0.75em;
+    transform: translate(1em, 0.5em) scale(1);
+
+    &.Mui-focused {
+      transform: translate(1em, -1.5em) scale(1);
+      padding: 0.5em;
+    }
+  }
+}

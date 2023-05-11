@@ -3,7 +3,6 @@ import Accordion from '@mui/material/Accordion';
 import AccordionDetails from '@mui/material/AccordionDetails';
 import AccordionSummary from '@mui/material/AccordionSummary';
 import Typography from '@mui/material/Typography';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 
 import Box from '@mui/material/Box';
 import Paper from '@mui/material/Paper';
@@ -21,53 +20,73 @@ import FormControl from '@mui/material/FormControl';
 import Select, { SelectChangeEvent } from '@mui/material/Select';
 import IconButton from '@mui/material/IconButton';
 import Stack from '@mui/material/Stack';
-import DeleteIcon from '@mui/icons-material/Delete';
-import AlarmIcon from '@mui/icons-material/Alarm';
 import ArrowBackIosNewIcon from '@mui/icons-material/ArrowBackIosNew';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
-import Drawer from '@mui/material/Drawer';
+
+import ExpandLessIcon from '@mui/icons-material/ExpandLess';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+
+import domainsStyles from './domains.scss';
 
 import DashboardLayout from '../../layouts/dashboard';
 import OSApi from '../../os-api';
 
-interface Domain {
+import NewDomain from './NewDomain';
+import CoreTable from '../../components/CoreTable';
+
+const { PerPageOption } = CoreTable;
+
+export type HTMLElementEvent<T extends HTMLElement> = Event & {
+  target: T;
+  // probably you might want to add the currentTarget as well
+  // currentTarget: T;
+};
+
+export interface Domain {
   id: number;
   url: string;
   title?: string;
   description?: string;
   created_at: Date;
   updated_at: Date;
+  expanded?: boolean;
 }
 
-const sortQuery = (q: string | undefined, perPage: number, page: number) => ({
-  where: {
-    ...(q && {
-      url: {
-        contains: q,
-      },
-    }),
-  },
-  take: perPage || 5,
-  skip: (page || 0) * (perPage || 5),
-});
+const dbQueryPrep = {
+  query: (q: string | undefined, perPage: number, page: number) => ({
+    where: {
+      ...(q && {
+        url: {
+          contains: q,
+        },
+      }),
+    },
+    take: perPage || 5,
+    skip: (page || 0) * (perPage || 5),
+  }),
 
-const sortQueryCount = (q: string | undefined) => ({
-  where: {
-    ...(q && {
-      url: {
-        contains: q,
-      },
-    }),
-  },
-});
+  count: (q: string | undefined) => ({
+    where: {
+      ...(q && {
+        url: {
+          contains: q,
+        },
+      }),
+    },
+  }),
+};
 
-const fetchSearchCallback = async (queryString = '', perPage = 5, page = 1) => {
+const fetchDomainsList = async (queryString = '', perPage = 5, page = 1) => {
   console.log('fetched search callback', queryString);
   const data = await OSApi.prisma().domain.findMany(
-    sortQuery(queryString !== '' ? queryString : undefined, perPage, page - 1)
+    dbQueryPrep.query(
+      queryString !== '' ? queryString : undefined,
+      perPage,
+      page - 1
+    )
   );
   const count = await OSApi.prisma().domain.count(
-    sortQueryCount(queryString !== '' ? queryString : undefined)
+    dbQueryPrep.count(queryString !== '' ? queryString : undefined)
   );
 
   return { data, count };
@@ -75,31 +94,49 @@ const fetchSearchCallback = async (queryString = '', perPage = 5, page = 1) => {
 
 let userInputDelayTimer: null | ReturnType<typeof setTimeout> = null;
 
+const createDomainsData = (data: unknown[]) =>
+  data?.map((i: unknown) => ({ ...(i ?? i), expanded: false }));
+
 export default function Domains() {
   const [searchQ, setSearchQ] = useState<string>('');
-  const [domains, setDomains] = useState<unknown[] | Domain[]>([]);
+  const [domains, setDomains] = useState<Domain[]>([]);
   const [resultCount, setResultCount] = useState<number>(0);
   const [isLoadingList, setIsLoadingList] = useState<boolean>(false);
 
   const [perPage, setPerPage] = useState<number>(10);
   const [currentPage, setCurrentPage] = useState<number>(1);
 
-  const [newDomainForm, setNewDomainForm] = useState(false);
+  const expandDomain = (domain: Domain) => {
+    const newDomains: Domain[] = [];
+    domains?.map((dom) =>
+      newDomains.push({
+        ...(dom ?? dom),
+        ...(dom?.url === domain.url && { expanded: !dom?.expanded }),
+      })
+    );
+
+    setDomains(newDomains);
+  };
+
+  console.warn('DOMAINS', domains);
 
   const handleChangePerPage = (event: SelectChangeEvent) => {
     setPerPage(parseInt(event.target.value, 10));
     setCurrentPage(1);
   };
 
-  const fetch = async (val: any) => {
+  const fetch = async (val: unknown) => {
     setIsLoadingList(true);
-    console.log('SEARCHING', JSON.stringify(searchQ));
-    const rez = await fetchSearchCallback(val, perPage, currentPage);
-    console.log(rez);
-    setDomains(rez?.data);
+    // console.log('SEARCHING', JSON.stringify(searchQ));
+    const rez = await fetchDomainsList(val, perPage, currentPage);
+    // console.log(rez);
+    setDomains(
+      createDomainsData(rez?.data ? rez.data : []) as unknown as Domain[]
+    );
     setResultCount(rez.count);
     setIsLoadingList(false);
   };
+
   const generateDomain = async () => {
     const e = {
       data: {
@@ -117,15 +154,14 @@ export default function Domains() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [perPage, currentPage]);
 
-  const fetchSearch = (e) => {
+  const fetchSearch = (e: HTMLElementEvent<HTMLTextAreaElement>) => {
     e.stopPropagation();
-    console.log(JSON.stringify(e.target.value));
+    const val = e?.target?.value;
+    // console.log(JSON.stringify(e.target.value));
+    setCurrentPage(1);
+    setSearchQ(val);
 
     if (userInputDelayTimer !== null) clearTimeout(userInputDelayTimer);
-    setCurrentPage(1);
-    setSearchQ(e.target.value);
-
-    const val = e.target.value;
 
     userInputDelayTimer = setTimeout(() => {
       fetch(val);
@@ -143,79 +179,50 @@ export default function Domains() {
 
   return (
     <DashboardLayout title="Domains Manager">
-      <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+      <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
         <Grid container spacing={2} alignItems="center">
-          <Grid xs={6}>
-            <Box
-              component="form"
-              sx={{
-                '& > :not(style)': { m: 1, width: '25ch' },
-              }}
-              noValidate
-              autoComplete="off"
-              onSubmit={(e) => e.preventDefault()}
-            >
-              <TextField
-                id="filled-basic"
-                label="Search"
-                variant="filled"
-                onChange={fetchSearch}
-              />
-            </Box>
-          </Grid>
+          <Grid xs={6}>__</Grid>
           <Grid
             xs={6}
             textAlign="end"
             sx={{ display: 'flex', justifyContent: 'flex-end', gap: '.5em' }}
           >
-            <Button
-              variant="contained"
-              onClick={() => setNewDomainForm(true)}
-              endIcon={<AddBoxIcon />}
-            >
-              New
-            </Button>
-            <Drawer
-              anchor="right"
-              open={newDomainForm}
-              onClose={() => setNewDomainForm(false)}
-              sx={{ zIndex: 9000 }}
-            >
-              YEAAA
-            </Drawer>
-            <Button
-              variant="contained"
-              endIcon={<SmartToyIcon />}
-              color="secondary"
-              onClick={generateDomain}
-            >
-              Generate
-            </Button>
+            <NewDomain />
           </Grid>
         </Grid>
-
-        {/* ADVANCED FILTERS */}
-        <Accordion>
-          <AccordionSummary
-            expandIcon={<ExpandMoreIcon />}
-            aria-controls="panel1a-content"
-            id="panel1a-header"
-          >
-            <Typography>Advanced Filters</Typography>
-          </AccordionSummary>
-          <AccordionDetails>
-            <Typography>{JSON.stringify(domains, null, 3)}</Typography>
-          </AccordionDetails>
-        </Accordion>
 
         {isLoadingList ? (
           <LinearProgress color="success" />
         ) : (
-          <>
+          <Paper
+            sx={{
+              p: 1.25,
+              background: '#e7e7e7',
+            }}
+          >
             <Grid container spacing={2}>
-              <Grid xs={6} />
               <Grid xs={6}>
-                <Paper>Total Results: {resultCount}</Paper>
+                <Box
+                  component="form"
+                  sx={{
+                    '& > :not(style)': { m: 1, width: '25ch' },
+                  }}
+                  noValidate
+                  autoComplete="off"
+                  onSubmit={(e) => e.preventDefault()}
+                >
+                  <TextField
+                    id="domains_search_input"
+                    label="Search"
+                    variant="filled"
+                    value={searchQ}
+                    onChange={(e) =>
+                      fetchSearch(
+                        e as unknown as HTMLElementEvent<HTMLTextAreaElement>
+                      )
+                    }
+                  />
+                </Box>
               </Grid>
             </Grid>
 
@@ -226,50 +233,119 @@ export default function Domains() {
                 mt: 1,
                 mb: 1,
                 p: 1,
-                background: '#e0e0e0',
-                display: 'flex',
                 overflow: 'auto',
                 flex: 1,
+                gap: 0.75,
               }}
             >
               {domains?.map((domain) => {
-                const { id, url } = domain as Domain;
+                const { id, url, title, description } = domain as Domain;
                 return (
-                  <Grid xs={12} key={id}>
-                    <Paper>{url}</Paper>
-                  </Grid>
+                  <Paper
+                    key={crypto.randomUUID()}
+                    sx={{
+                      width: '100%',
+                      border: '1px solid #dbdbdb',
+                      borderRadius: '.5em',
+                      background: domain?.expanded ? '#EEE' : '#F0F0F0',
+                    }}
+                  >
+                    <Grid
+                      sx={{
+                        // padding: '0.25em .75em',
+                        borderTop: '1px solid #dbdbdb',
+                        borderLeft: '1px solid #dbdbdb',
+                        borderRight: '1px solid #dbdbdb',
+                        borderRadius: '.5em .5em 0 0 ',
+                        width: '100%',
+                        display: 'flex',
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        p: 0,
+                        justifyContent: 'space-between',
+                        background: domain?.expanded
+                          ? '#e7e7e7'
+                          : 'transparent',
+                      }}
+                    >
+                      <Grid xs={11} key={id}>
+                        {!title ? url : title}
+                      </Grid>
+                      <Grid xs={1}>
+                        <IconButton
+                          color="secondary"
+                          aria-label="Expand Row Data"
+                          onClick={() => expandDomain(domain)}
+                          sx={{
+                            borderRadius: 0,
+                            maxHeight: '24px',
+                          }}
+                        >
+                          {domain.expanded ? (
+                            <ExpandMoreIcon />
+                          ) : (
+                            <ExpandLessIcon />
+                          )}
+                        </IconButton>
+                      </Grid>
+                    </Grid>
+                    {domain.expanded && (
+                      <Grid
+                        xs={12}
+                        sx={{
+                          p: 1,
+                          borderTop: '2px solid #dbdbdb',
+                        }}
+                      >
+                        <div>{`Title: ${
+                          domain.title || '[ ❗ missing_info ]'
+                        }`}</div>
+                        <div>{`Description: ${
+                          domain.description || '[ ❗ missing_info ]'
+                        }`}</div>
+                        <div>{`Created: ${
+                          domain.created_at || '[ ❗ missing_info ]'
+                        }`}</div>
+                        <div>{`Updated: ${
+                          domain.updated_at || '[ ❗ missing_info ]'
+                        }`}</div>
+                      </Grid>
+                    )}
+                  </Paper>
                 );
               })}
             </Grid>
 
-            <Grid container spacing={2}>
-              <Grid xs={6}>
-                <FormControl sx={{ minWidth: '5em' }}>
-                  <InputLabel id="demo-simple-select-label">
-                    Per Page
-                  </InputLabel>
-                  <Select
-                    labelId="demo-simple-select-label"
-                    id="demo-simple-select"
-                    value={String(perPage)}
-                    label="Per Page"
-                    onChange={handleChangePerPage}
-                  >
-                    <MenuItem value={10}>10</MenuItem>
-                    <MenuItem value={50}>50</MenuItem>
-                    <MenuItem value={100}>100</MenuItem>
-                    <MenuItem value={1000}>1000</MenuItem>
-                  </Select>
-                </FormControl>
+            <Grid container spacing={2} alignItems="center">
+              <Grid xs={3}>
+                <PerPageOption
+                  perPage={perPage}
+                  changeHandle={handleChangePerPage}
+                />
               </Grid>
 
-              <Grid xs={6} sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-                <Stack direction="row" spacing={1}>
+              <Grid xs={6} sx={{ justifyContent: 'center', display: 'flex' }}>
+                <Paper sx={{ textAlign: 'center', p: 2, width: 'fit-content' }}>
+                  Total Results: {resultCount} | Showing:{' '}
+                  {String((currentPage - 1) * perPage)}-
+                  {String(currentPage * perPage)}
+                </Paper>
+              </Grid>
+
+              <Grid xs={3} sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+                <Stack direction="row" spacing={0}>
                   {currentPage !== 1 && (
                     <IconButton
                       color="secondary"
                       aria-label="add an alarm"
                       onClick={() => setCurrentPage(currentPage - 1)}
+                      sx={{
+                        borderRadius: '2.5em 0 0 2.5em',
+                        background: 'white',
+                        borderWidth: '1px 0 1px 1px',
+                        borderColor: 'gray',
+                        borderStyle: 'solid',
+                      }}
                     >
                       <ArrowBackIosNewIcon />
                     </IconButton>
@@ -286,9 +362,15 @@ export default function Domains() {
                       onChange={(e) =>
                         setCurrentPage(parseInt(e.target.value, 10))
                       }
+                      sx={{ background: 'white' }}
                     >
                       {paginationSelectOptions.map((i, j) => (
-                        <MenuItem value={i}>{i}</MenuItem>
+                        <MenuItem
+                          value={i}
+                          key={[i, j].map((c) => String(c)).join('_')}
+                        >
+                          {i}
+                        </MenuItem>
                       ))}
                     </Select>
                   </FormControl>
@@ -298,6 +380,13 @@ export default function Domains() {
                       color="secondary"
                       aria-label="add an alarm"
                       onClick={() => setCurrentPage(currentPage + 1)}
+                      sx={{
+                        borderRadius: '0 2.5em 2.5em 0',
+                        background: 'white',
+                        borderWidth: '1px 1px 1px 0 ',
+                        borderStyle: 'solid',
+                        borderColor: 'gray',
+                      }}
                     >
                       <ArrowForwardIosIcon />
                     </IconButton>
@@ -305,21 +394,30 @@ export default function Domains() {
                 </Stack>
               </Grid>
             </Grid>
-          </>
+          </Paper>
         )}
 
-        {/* <Accordion>
-        <AccordionSummary
-          expandIcon={<ExpandMoreIcon />}
-          aria-controls="panel1a-content"
-          id="panel1a-header"
-        >
-          <Typography>JSON State</Typography>
-        </AccordionSummary>
-        <AccordionDetails>
-          <Typography>{JSON.stringify(domains, null, 3)}</Typography>
-        </AccordionDetails>
-          </Accordion> */}
+        {/* ADVANCED FILTERS */}
+        <Accordion>
+          <AccordionSummary
+            expandIcon={<ExpandMoreIcon />}
+            aria-controls="panel1a-content"
+            id="panel1a-header"
+          >
+            <Typography>⚙ Advanced Actions & Filters</Typography>
+          </AccordionSummary>
+          <AccordionDetails>
+            <Button
+              variant="contained"
+              endIcon={<SmartToyIcon />}
+              color="secondary"
+              onClick={generateDomain}
+            >
+              Generate Entry
+            </Button>
+            <Typography>{JSON.stringify(domains, null, 3)}</Typography>
+          </AccordionDetails>
+        </Accordion>
       </Box>
     </DashboardLayout>
   );

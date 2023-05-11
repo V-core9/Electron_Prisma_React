@@ -151,25 +151,20 @@ const dbPath = isDev
 
 if (!isDev) {
   try {
+    const dbFilePath = path.join(process.resourcesPath, 'prisma/dev.db');
     // database file does not exist, need to create
-    fs.copyFileSync(
-      path.join(process.resourcesPath, 'prisma/dev.db'),
-      dbPath,
-      fs.constants.COPYFILE_EXCL
-    );
-    console.log(
-      `DB does not exist. Create new DB from ${path.join(
-        process.resourcesPath,
-        'prisma/dev.db'
-      )}`
-    );
+    if (!fs.existsSync(dbFilePath)) {
+      // file exists
+      fs.copyFileSync(dbFilePath, dbPath, fs.constants.COPYFILE_EXCL);
+      console.log(`DB does not exist. Create new DB from ${dbFilePath}`);
+    }
   } catch (err) {
     if (
       err &&
       'code' in (err as { code: string }) &&
       (err as { code: string }).code !== 'EEXIST'
     ) {
-      console.error(`DB creation faild. Reason:`, err);
+      console.warn(`DB creation failed. Reason:`, err);
     } else {
       throw err;
     }

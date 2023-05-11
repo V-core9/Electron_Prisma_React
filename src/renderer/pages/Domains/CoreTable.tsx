@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+// import React, { useState } from 'react';
 import Box from '@mui/material/Box';
 import Paper from '@mui/material/Paper';
 import Grid from '@mui/material/Unstable_Grid2';
@@ -11,6 +11,8 @@ import IconButton from '@mui/material/IconButton';
 import Stack from '@mui/material/Stack';
 import ArrowBackIosNewIcon from '@mui/icons-material/ArrowBackIosNew';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
+
+import { Domain } from './Domains';
 
 export default function CoreTable({
   domains,
@@ -44,10 +46,10 @@ export default function CoreTable({
           flex: 1,
         }}
       >
-        {domains?.map((domain) => {
+        {domains?.map((domain: Domain) => {
           const { id, url } = domain;
           return (
-            <Grid xs={12} key={id}>
+            <Grid xs={12} key={`${id}_${url}`}>
               <Paper>{url}</Paper>
             </Grid>
           );
@@ -93,7 +95,7 @@ export default function CoreTable({
                 id="current-page-select"
                 value={String(currentPage)}
                 label="Current Page"
-                onChange={(e) => setCurrentPage(e.target.value as number)}
+                onChange={(e) => setCurrentPage(e.target.value as unknown as number)}
               >
                 {paginationSelectOptions.map((i, j) => (
                   <MenuItem value={i}>{i}</MenuItem>
