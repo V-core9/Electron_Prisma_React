@@ -153,7 +153,7 @@ if (!isDev) {
   try {
     const dbFilePath = path.join(process.resourcesPath, 'prisma/dev.db');
     // database file does not exist, need to create
-    if (!fs.existsSync(dbFilePath)) {
+    if (!fs.existsSync(dbPath)) {
       // file exists
       fs.copyFileSync(dbFilePath, dbPath, fs.constants.COPYFILE_EXCL);
       console.log(`DB does not exist. Create new DB from ${dbFilePath}`);

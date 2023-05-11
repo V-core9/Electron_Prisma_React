@@ -25,16 +25,15 @@ import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import Checkbox from '@mui/material/Checkbox';
 
-import domainsStyles from './domains.scss';
+import './domains.scss';
 
 import DashboardLayout from '../../layouts/dashboard';
 import OSApi from '../../os-api';
 
 import NewDomain from './NewDomain';
-import CoreTable from '../../components/CoreTable';
-
-const { PerPageOption } = CoreTable;
+import PerPageOption from '../../components/CoreTable/PerPageOption';
 
 export type HTMLElementEvent<T extends HTMLElement> = Event & {
   target: T;
@@ -198,6 +197,9 @@ export default function Domains() {
             sx={{
               p: 1.25,
               background: '#e7e7e7',
+              flex: 1,
+              display: 'flex',
+              flexDirection: 'column',
             }}
           >
             <Grid container spacing={2}>
@@ -234,8 +236,11 @@ export default function Domains() {
                 mb: 1,
                 p: 1,
                 overflow: 'auto',
-                flex: 1,
                 gap: 0.75,
+                flex: 1,
+                alignContent: 'flex-start',
+                display: 'flex',
+                background: '#f0f0f0',
               }}
             >
               {domains?.map((domain) => {
@@ -268,7 +273,13 @@ export default function Domains() {
                           : 'transparent',
                       }}
                     >
-                      <Grid xs={11} key={id}>
+                      <Grid sx={{ maxWidth: 80 }}>
+                        <Checkbox
+                          inputProps={{ 'aria-label': 'Checkbox demo' }}
+                          defaultChecked
+                        />
+                      </Grid>
+                      <Grid sx={{ flex: 1 }} key={id}>
                         {!title ? url : title}
                       </Grid>
                       <Grid xs={1}>

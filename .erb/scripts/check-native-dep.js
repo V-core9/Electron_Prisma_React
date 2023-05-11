@@ -41,7 +41,7 @@ ${chalk.whiteBright.bgRed.bold('npm install your-package')}
 ${chalk.whiteBright.bgGreen.bold('cd ./release/app && npm install your-package')}
  Read more about native dependencies at:
 ${chalk.bold(
-  'https://electron-react-boilerplate.js.org/docs/adding-dependencies/#module-structure'
+  'https://electron-react-prisma.js.org/docs/adding-dependencies/#module-structure'
 )}
  `);
       process.exit(1);

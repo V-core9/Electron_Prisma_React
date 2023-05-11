@@ -12,6 +12,7 @@ import Stack from '@mui/material/Stack';
 import ArrowBackIosNewIcon from '@mui/icons-material/ArrowBackIosNew';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 
+import PerPageOption from '../../components/CoreTable/PerPageOption';
 import { Domain } from './Domains';
 
 export default function CoreTable({
@@ -58,21 +59,13 @@ export default function CoreTable({
 
       <Grid container spacing={2}>
         <Grid xs={6}>
-          <FormControl sx={{ minWidth: '5em' }}>
-            <InputLabel id="demo-simple-select-label">Per Page</InputLabel>
-            <Select
-              labelId="demo-simple-select-label"
-              id="demo-simple-select"
-              value={String(perPage)}
-              label="Per Page"
-              onChange={handleChangePerPage}
-            >
-              <MenuItem value={10}>10</MenuItem>
-              <MenuItem value={50}>50</MenuItem>
-              <MenuItem value={100}>100</MenuItem>
-              <MenuItem value={1000}>1000</MenuItem>
-            </Select>
-          </FormControl>
+          <PerPageOption
+            labelId="demo-simple-select-label"
+            id="demo-simple-select"
+            value={String(perPage)}
+            label="Per Page"
+            onChange={handleChangePerPage}
+          />
         </Grid>
 
         <Grid xs={6} sx={{ display: 'flex', justifyContent: 'flex-end' }}>
@@ -95,7 +88,9 @@ export default function CoreTable({
                 id="current-page-select"
                 value={String(currentPage)}
                 label="Current Page"
-                onChange={(e) => setCurrentPage(e.target.value as unknown as number)}
+                onChange={(e) =>
+                  setCurrentPage(e.target.value as unknown as number)
+                }
               >
                 {paginationSelectOptions.map((i, j) => (
                   <MenuItem value={i}>{i}</MenuItem>

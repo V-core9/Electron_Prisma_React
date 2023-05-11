@@ -1,12 +1,12 @@
 {
-  "name": "electron-react-boilerplate",
+  "name": "electron-react-prisma",
   "version": "4.5.0",
   "description": "A foundation for scalable desktop apps",
   "main": "./dist/main/main.js",
   "author": {
-    "name": "Electron React Boilerplate Maintainers",
-    "email": "electronreactboilerplate@gmail.com",
-    "url": "https://github.com/electron-react-boilerplate"
+    "name": "Electron React prisma Maintainers",
+    "email": "electronreactprisma@gmail.com",
+    "url": "https://github.com/V-core9/Electron_Prisma_React"
   },
   "scripts": {
     "electron-rebuild": "node -r ts-node/register ../../.erb/scripts/electron-rebuild.js",
