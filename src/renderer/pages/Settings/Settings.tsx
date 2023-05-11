@@ -64,7 +64,7 @@ const settingsTabs = [
 
 export default function Settings() {
   return (
-    <DashboardLayout title="Home">
+    <DashboardLayout title="Settings">
       <Tabs tabs={settingsTabs} selectedTabIndex={0} />
     </DashboardLayout>
   );
