@@ -111,38 +111,56 @@ export default function Domains() {
   const [perPage, setPerPage] = useState<number>(10);
   const [currentPage, setCurrentPage] = useState<number>(1);
 
+  function shallowEqual(object1: any, object2: any) {
+    const keys1 = Object.keys(object1);
+    const keys2 = Object.keys(object2);
+
+    if (keys1.length !== keys2.length) {
+      return false;
+    }
+
+    // eslint-disable-next-line no-restricted-syntax
+    for (const key of keys1) {
+      if (object1[key] !== object2[key]) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  const toggleSelected = (domain: Domain) => {
+    const newDomains: Domain[] = [];
+    domains?.map((d) =>
+      newDomains.push({
+        ...(d ?? d),
+        ...(shallowEqual(d, domain) && { selected: !d?.selected }),
+      })
+    );
+
+    setDomains(newDomains);
+  };
+
   const expandDomain = (domain: Domain) => {
     const newDomains: Domain[] = [];
     domains?.map((dom) =>
       newDomains.push({
         ...(dom ?? dom),
-        ...(dom?.url === domain.url && { expanded: !dom?.expanded }),
+        ...(shallowEqual(dom, domain) && { expanded: !dom?.expanded }),
       })
     );
 
     setDomains(newDomains);
   };
 
-  const selectDomain = (domain: Domain) => {
-    const newDomains: Domain[] = [];
-    domains?.map((dom) =>
-      newDomains.push({
-        ...(dom ?? dom),
-        ...(dom?.url === domain.url && { selected: !dom?.selected }),
-      })
-    );
-
-    setDomains(newDomains);
-  };
-
-  console.warn('DOMAINS', domains);
+  // console.warn('DOMAINS', domains);
 
   const handleChangePerPage = (event: SelectChangeEvent) => {
     setPerPage(parseInt(event.target.value, 10));
     setCurrentPage(1);
   };
 
-  const fetch = async (val: unknown) => {
+  const fetch = async (val: string | undefined) => {
     setIsLoadingList(true);
     // console.log('SEARCHING', JSON.stringify(searchQ));
     const rez = await fetchDomainsList(val, perPage, currentPage);
@@ -295,7 +313,7 @@ export default function Domains() {
                         <Checkbox
                           inputProps={{ 'aria-label': 'Checkbox demo' }}
                           checked={domain.selected || false}
-                          onChange={(e) => selectDomain(domain)}
+                          onChange={() => toggleSelected(domain)}
                         />
                       </Grid>
                       <Grid sx={{ flex: 1 }} key={id}>

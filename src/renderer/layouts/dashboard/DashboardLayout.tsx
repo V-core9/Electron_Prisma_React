@@ -77,8 +77,9 @@ export default function DashboardLayout({
   title: string;
   children: JSX.Element;
 }) {
-  const localStorageOpen = localStorage.getItem('navigation_open') === 'true';
-  const [open, setOpen] = useState(localStorageOpen);
+  const [open, setOpen] = useState(
+    localStorage.getItem('navigation_open') === 'true'
+  );
   const toggleDrawer = () => {
     const newOpen = !open;
     setOpen(newOpen);
