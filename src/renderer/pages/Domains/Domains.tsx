@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Accordion from '@mui/material/Accordion';
 import AccordionDetails from '@mui/material/AccordionDetails';
 import AccordionSummary from '@mui/material/AccordionSummary';
@@ -35,59 +35,25 @@ import OSApi from '../../os-api';
 import NewDomain from './NewDomain';
 import PerPageOption from '../../components/CoreTable/PerPageOption';
 
-export type HTMLElementEvent<T extends HTMLElement> = Event & {
-  target: T;
-  // probably you might want to add the currentTarget as well
-  // currentTarget: T;
-};
+import { prepareDatabaseQuery } from '../../services/domains/prepareDatabaseQuery';
 
-export interface Domain {
-  id: number;
-  url: string;
-  title?: string;
-  description?: string;
-  created_at: Date;
-  updated_at: Date;
+import { useListSelectExpand } from '../../hooks';
 
-  expanded?: boolean;
-  selected?: boolean;
-}
-
-const dbQueryPrep = {
-  query: (q: string | undefined, perPage: number, page: number) => ({
-    where: {
-      ...(q && {
-        url: {
-          contains: q,
-        },
-      }),
-    },
-    take: perPage || 5,
-    skip: (page || 0) * (perPage || 5),
-  }),
-
-  count: (q: string | undefined) => ({
-    where: {
-      ...(q && {
-        url: {
-          contains: q,
-        },
-      }),
-    },
-  }),
-};
+//! Types
+import { Domain } from '../../../types/Domain.interface';
+import type { HTMLElementEvent } from '../../../types/HTMLElementEvent.type';
 
 const fetchDomainsList = async (queryString = '', perPage = 5, page = 1) => {
   console.log('fetched search callback', queryString);
   const data = await OSApi.prisma().domain.findMany(
-    dbQueryPrep.query(
+    prepareDatabaseQuery.query(
       queryString !== '' ? queryString : undefined,
       perPage,
       page - 1
     )
   );
   const count = await OSApi.prisma().domain.count(
-    dbQueryPrep.count(queryString !== '' ? queryString : undefined)
+    prepareDatabaseQuery.count(queryString !== '' ? queryString : undefined)
   );
 
   return { data, count };
@@ -111,49 +77,10 @@ export default function Domains() {
   const [perPage, setPerPage] = useState<number>(10);
   const [currentPage, setCurrentPage] = useState<number>(1);
 
-  function shallowEqual(object1: any, object2: any) {
-    const keys1 = Object.keys(object1);
-    const keys2 = Object.keys(object2);
-
-    if (keys1.length !== keys2.length) {
-      return false;
-    }
-
-    // eslint-disable-next-line no-restricted-syntax
-    for (const key of keys1) {
-      if (object1[key] !== object2[key]) {
-        return false;
-      }
-    }
-
-    return true;
-  }
-
-  const toggleSelected = (domain: Domain) => {
-    const newDomains: Domain[] = [];
-    domains?.map((d) =>
-      newDomains.push({
-        ...(d ?? d),
-        ...(shallowEqual(d, domain) && { selected: !d?.selected }),
-      })
-    );
-
-    setDomains(newDomains);
-  };
-
-  const expandDomain = (domain: Domain) => {
-    const newDomains: Domain[] = [];
-    domains?.map((dom) =>
-      newDomains.push({
-        ...(dom ?? dom),
-        ...(shallowEqual(dom, domain) && { expanded: !dom?.expanded }),
-      })
-    );
-
-    setDomains(newDomains);
-  };
-
-  // console.warn('DOMAINS', domains);
+  const { toggleSelected, toggleExpanded } = useListSelectExpand(
+    domains,
+    setDomains
+  );
 
   const handleChangePerPage = (event: SelectChangeEvent) => {
     setPerPage(parseInt(event.target.value, 10));
@@ -184,7 +111,7 @@ export default function Domains() {
     await fetch(searchQ);
   };
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (!isLoadingList) fetch(searchQ);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [perPage, currentPage]);
@@ -323,7 +250,7 @@ export default function Domains() {
                         <IconButton
                           color="secondary"
                           aria-label="Expand Row Data"
-                          onClick={() => expandDomain(domain)}
+                          onClick={() => toggleExpanded(domain)}
                           sx={{
                             borderRadius: 0,
                             maxHeight: '24px',

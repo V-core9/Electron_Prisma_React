@@ -13,7 +13,7 @@ import ArrowBackIosNewIcon from '@mui/icons-material/ArrowBackIosNew';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 
 import PerPageOption from '../../components/CoreTable/PerPageOption';
-import { Domain } from './Domains';
+import type { Domain } from '../../../types/Domain.interface';
 
 export default function CoreTable({
   domains,
