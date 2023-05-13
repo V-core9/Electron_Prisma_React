@@ -20,5 +20,5 @@
     "package-lock.json": true,
     "*.{css,sass,scss}.d.ts": true
   },
-  "cSpell.words": ["whois"]
+  "cSpell.words": ["fibo", "whois"]
 }

@@ -1,7 +1,17 @@
 // ? Pages List
-import pages from '../pages';
+// import pages from 'renderer/pages';
+import { Suspense, lazy } from 'react';
 
-const { Settings, Hello, SamplePage, Dashboard, NoPage, Domains } = pages;
+const SamplePage = lazy(() => import('renderer/pages/SamplePage'));
+const Settings = lazy(() => import('renderer/pages/Settings'));
+const Hello = lazy(() => import('renderer/pages/Hello'));
+const Dashboard = lazy(() => import('renderer/pages/Dashboard'));
+const NoPage = lazy(() => import('renderer/pages/Error/NoPage'));
+const Domains = lazy(() => import('renderer/pages/Domains'));
+const DomainsNew = lazy(() => import('renderer/pages/Domains/DomainsNew'));
+const WebWorkerExample = lazy(
+  () => import('renderer/pages/WebWorkerExample/WebWorkerExample')
+);
 
 const routes = [
   {
@@ -31,6 +41,16 @@ const routes = [
   {
     path: '/domains-manager',
     elem: <Domains />,
+    description:
+      'DomainManager v1 as Prisma and CustomTable component example init.',
+  },
+  {
+    path: '/domains-manager-new',
+    elem: <DomainsNew />,
+  },
+  {
+    path: '/web-worker-example',
+    elem: <WebWorkerExample />,
   },
   //! 404 Error Page
   {

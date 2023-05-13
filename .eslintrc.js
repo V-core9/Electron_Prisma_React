@@ -26,5 +26,16 @@ module.exports = {
     'import/parsers': {
       '@typescript-eslint/parser': ['.ts', '.tsx'],
     },
+    'prettier/prettier': {
+      tabWidth: 2,
+      useTabs: false,
+      semi: false,
+      endOfLine: 'crlf',
+      printWidth: 200,
+      singleQuote: true,
+      trailingComma: false,
+      bracketSpacing: true,
+      jsxSingleQuote: true,
+    },
   },
 };

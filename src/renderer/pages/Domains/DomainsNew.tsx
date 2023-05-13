@@ -37,11 +37,13 @@ import PerPageOption from '../../components/CoreTable/PerPageOption';
 
 import { prepareDatabaseQuery } from '../../services/domains/prepareDatabaseQuery';
 
-import { useListSelectExpand } from '../../hooks';
+import { useAdvancedTable } from '../../hooks';
 
 //! Types
 import { Domain } from '../../../types/Domain.interface';
 import type { HTMLElementEvent } from '../../../types/HTMLElementEvent.type';
+
+const timeouts: any = {};
 
 const fetchDomainsList = async (queryString = '', perPage = 5, page = 1) => {
   console.log('fetched search callback', queryString);
@@ -59,29 +61,31 @@ const fetchDomainsList = async (queryString = '', perPage = 5, page = 1) => {
   return { data, count };
 };
 
-let userInputDelayTimer: null | ReturnType<typeof setTimeout> = null;
+// let userInputDelayTimer: null | ReturnType<typeof setTimeout> = null;
 
-const createDomainsData = (data: unknown[]) =>
-  data?.map((i: unknown) => ({
-    ...(i ?? i),
-    expanded: false,
-    selected: false,
-  }));
-
-export default function Domains() {
+export default function DomainsNew() {
   const [searchQ, setSearchQ] = useState<string>('');
   const [resultCount, setResultCount] = useState<number>(0);
   const [isLoadingList, setIsLoadingList] = useState<boolean>(false);
 
-  const [perPage, setPerPage] = useState<number>(10);
-  const [currentPage, setCurrentPage] = useState<number>(1);
-
   const {
-    state: domains,
-    setState: setDomains,
+    data: domains,
+    setData: setDomains,
+
+    selected,
     toggleSelected,
+
+    expanded,
     toggleExpanded,
-  } = useListSelectExpand([]);
+
+    currentPage,
+    setCurrentPage,
+
+    perPage,
+    setPerPage,
+  } = useAdvancedTable([]);
+
+  // console.warn(domains, selected, expanded, currentPage, perPage);
 
   const handleChangePerPage = (event: SelectChangeEvent) => {
     setPerPage(parseInt(event.target.value, 10));
@@ -89,15 +93,17 @@ export default function Domains() {
   };
 
   const fetch = async (val: string | undefined) => {
+    const startLoad = Date.now();
     setIsLoadingList(true);
     // console.log('SEARCHING', JSON.stringify(searchQ));
     const rez = await fetchDomainsList(val, perPage, currentPage);
     // console.log(rez);
-    setDomains(
-      createDomainsData(rez?.data ? rez.data : []) as unknown as Domain[]
-    );
-    setResultCount(rez.count);
-    setIsLoadingList(false);
+
+    timeouts.pageFetch = setTimeout(async () => {
+      setDomains(rez?.data ? rez.data : []) as unknown as Domain[];
+      setResultCount(rez.count);
+      setIsLoadingList(false);
+    }, Date.now() - startLoad);
   };
 
   const generateDomain = async () => {
@@ -109,8 +115,21 @@ export default function Domains() {
 
     await OSApi.prisma().domain.create(e);
 
-    await fetch(searchQ);
+    fetch(searchQ);
   };
+
+  useEffect(() => {
+    // Anything in here is fired on component mount.
+    return () => {
+      // Anything in here is fired on component unmount.
+      try {
+        clearTimeout(timeouts.userInputDelayTimer);
+        clearTimeout(timeouts.pageFetch);
+      } catch (error) {
+        console.log(error);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (!isLoadingList) fetch(searchQ);
@@ -120,13 +139,13 @@ export default function Domains() {
   const fetchSearch = (e: HTMLElementEvent<HTMLTextAreaElement>) => {
     e.stopPropagation();
     const val = e?.target?.value;
-    // console.log(JSON.stringify(e.target.value));
     setCurrentPage(1);
     setSearchQ(val);
 
-    if (userInputDelayTimer !== null) clearTimeout(userInputDelayTimer);
+    if (timeouts.userInputDelayTimer !== null)
+      clearTimeout(timeouts.userInputDelayTimer);
 
-    userInputDelayTimer = setTimeout(() => {
+    timeouts.userInputDelayTimer = setTimeout(() => {
       fetch(val);
     }, 1000);
   };
@@ -142,7 +161,14 @@ export default function Domains() {
 
   return (
     <DashboardLayout title="Domains Manager">
-      <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+      <Box
+        id="domains_manager_new_content"
+        sx={{
+          display: 'flex',
+          flexDirection: 'column',
+          height: '100%',
+        }}
+      >
         <Grid container spacing={2} alignItems="center">
           <Grid xs={6}>__</Grid>
           <Grid
@@ -154,45 +180,67 @@ export default function Domains() {
           </Grid>
         </Grid>
 
-        {isLoadingList ? (
-          <LinearProgress color="success" />
-        ) : (
-          <Paper
-            sx={{
-              p: 1.25,
-              background: '#e7e7e7',
-              flex: 1,
-              display: 'flex',
-              flexDirection: 'column',
-            }}
-          >
-            <Grid container spacing={2}>
-              <Grid xs={6}>
-                <Box
-                  component="form"
-                  sx={{
-                    '& > :not(style)': { m: 1, width: '25ch' },
-                  }}
-                  noValidate
-                  autoComplete="off"
-                  onSubmit={(e) => e.preventDefault()}
-                >
-                  <TextField
-                    id="domains_search_input"
-                    label="Search"
-                    variant="filled"
-                    value={searchQ}
-                    onChange={(e) =>
-                      fetchSearch(
-                        e as unknown as HTMLElementEvent<HTMLTextAreaElement>
-                      )
-                    }
-                  />
-                </Box>
-              </Grid>
+        <Paper
+          sx={{
+            p: 1.25,
+            background: '#e7e7e7',
+            flex: 1,
+            display: 'flex',
+            flexDirection: 'column',
+            overflow: 'auto',
+            minHeight: '60vh',
+          }}
+        >
+          <Grid container spacing={2}>
+            <Grid xs={6}>
+              <Box
+                component="form"
+                sx={{
+                  '& > :not(style)': { m: 1, width: '25ch' },
+                }}
+                noValidate
+                autoComplete="off"
+                onSubmit={(e) => e.preventDefault()}
+              >
+                <TextField
+                  id="domains_search_input"
+                  label="Search"
+                  variant="filled"
+                  value={searchQ}
+                  onChange={(e) =>
+                    fetchSearch(
+                      e as unknown as HTMLElementEvent<HTMLTextAreaElement>
+                    )
+                  }
+                />
+              </Box>
             </Grid>
+          </Grid>
 
+          {isLoadingList ? (
             <Grid
+              container
+              spacing={1}
+              sx={{
+                mt: 1,
+                mb: 1,
+                p: 1,
+                overflow: 'auto',
+                gap: 0.75,
+                flex: 1,
+                display: 'flex',
+                background: '#f0f0f0',
+                flexDirection: 'column',
+                justifyContent: 'center',
+                alignContent: 'stretch',
+              }}
+            >
+              <Typography variant="h4">Loading Data...</Typography>
+              <LinearProgress color="success" />
+            </Grid>
+          ) : (
+            <Grid
+              id="domains_manager_new_datalist_container"
               container
               spacing={1}
               sx={{
@@ -207,8 +255,10 @@ export default function Domains() {
                 background: '#f0f0f0',
               }}
             >
-              {domains?.map((domain) => {
+              {domains?.map((domain, index) => {
                 const { id, url, title, description } = domain as Domain;
+                const isSelected = selected.indexOf(index) !== -1;
+                const isExpanded = expanded.indexOf(index) !== -1;
                 return (
                   <Paper
                     key={crypto.randomUUID()}
@@ -216,7 +266,7 @@ export default function Domains() {
                       width: '100%',
                       border: '1px solid #dbdbdb',
                       borderRadius: '.5em',
-                      background: domain?.expanded ? '#EEE' : '#F0F0F0',
+                      background: isExpanded ? '#EEE' : '#F0F0F0',
                     }}
                   >
                     <Grid
@@ -232,15 +282,13 @@ export default function Domains() {
                         alignItems: 'center',
                         p: 0,
                         justifyContent: 'space-between',
-                        background: domain?.expanded
-                          ? '#e7e7e7'
-                          : 'transparent',
+                        background: isExpanded ? '#e7e7e7' : 'transparent',
                       }}
                     >
                       <Grid sx={{ maxWidth: 80 }}>
                         <Checkbox
                           inputProps={{ 'aria-label': 'Checkbox demo' }}
-                          checked={domain.selected || false}
+                          checked={isSelected}
                           onChange={() => toggleSelected(domain)}
                         />
                       </Grid>
@@ -257,15 +305,11 @@ export default function Domains() {
                             maxHeight: '24px',
                           }}
                         >
-                          {domain.expanded ? (
-                            <ExpandMoreIcon />
-                          ) : (
-                            <ExpandLessIcon />
-                          )}
+                          {isExpanded ? <ExpandMoreIcon /> : <ExpandLessIcon />}
                         </IconButton>
                       </Grid>
                     </Grid>
-                    {domain.expanded && (
+                    {expanded.indexOf(index) !== -1 && (
                       <Grid
                         xs={12}
                         sx={{
@@ -274,16 +318,16 @@ export default function Domains() {
                         }}
                       >
                         <div>{`Title: ${
-                          domain.title || '[ ❗ missing_info ]'
+                          domain?.title || '[ ❗ missing_info ]'
                         }`}</div>
                         <div>{`Description: ${
-                          domain.description || '[ ❗ missing_info ]'
+                          domain?.description || '[ ❗ missing_info ]'
                         }`}</div>
                         <div>{`Created: ${
-                          domain.created_at || '[ ❗ missing_info ]'
+                          domain?.created_at || '[ ❗ missing_info ]'
                         }`}</div>
                         <div>{`Updated: ${
-                          domain.updated_at || '[ ❗ missing_info ]'
+                          domain?.updated_at || '[ ❗ missing_info ]'
                         }`}</div>
                       </Grid>
                     )}
@@ -291,87 +335,90 @@ export default function Domains() {
                 );
               })}
             </Grid>
+          )}
 
-            <Grid container spacing={2} alignItems="center">
-              <Grid xs={3}>
-                <PerPageOption
-                  perPage={perPage}
-                  changeHandle={handleChangePerPage}
-                />
-              </Grid>
-
-              <Grid xs={6} sx={{ justifyContent: 'center', display: 'flex' }}>
-                <Paper sx={{ textAlign: 'center', p: 2, width: 'fit-content' }}>
-                  Total Results: {resultCount} | Showing:{' '}
-                  {String((currentPage - 1) * perPage)}-
-                  {String(currentPage * perPage)}
-                </Paper>
-              </Grid>
-
-              <Grid xs={3} sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-                <Stack direction="row" spacing={0}>
-                  {currentPage !== 1 && (
-                    <IconButton
-                      color="secondary"
-                      aria-label="add an alarm"
-                      onClick={() => setCurrentPage(currentPage - 1)}
-                      sx={{
-                        borderRadius: '2.5em 0 0 2.5em',
-                        background: 'white',
-                        borderWidth: '1px 0 1px 1px',
-                        borderColor: 'gray',
-                        borderStyle: 'solid',
-                      }}
-                    >
-                      <ArrowBackIosNewIcon />
-                    </IconButton>
-                  )}
-                  <FormControl fullWidth sx={{ minWidth: '5em' }}>
-                    <InputLabel id="demo-simple-select-label">
-                      Current Page
-                    </InputLabel>
-                    <Select
-                      labelId="currentPageSelect"
-                      id="current-page-select"
-                      value={String(currentPage)}
-                      label="Current Page"
-                      onChange={(e) =>
-                        setCurrentPage(parseInt(e.target.value, 10))
-                      }
-                      sx={{ background: 'white' }}
-                    >
-                      {paginationSelectOptions.map((i, j) => (
-                        <MenuItem
-                          value={i}
-                          key={[i, j].map((c) => String(c)).join('_')}
-                        >
-                          {i}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
-
-                  {currentPage !== pageCount && (
-                    <IconButton
-                      color="secondary"
-                      aria-label="add an alarm"
-                      onClick={() => setCurrentPage(currentPage + 1)}
-                      sx={{
-                        borderRadius: '0 2.5em 2.5em 0',
-                        background: 'white',
-                        borderWidth: '1px 1px 1px 0 ',
-                        borderStyle: 'solid',
-                        borderColor: 'gray',
-                      }}
-                    >
-                      <ArrowForwardIosIcon />
-                    </IconButton>
-                  )}
-                </Stack>
-              </Grid>
+          <Grid container spacing={2} alignItems="center">
+            <Grid xs={3}>
+              <PerPageOption
+                perPage={perPage}
+                changeHandle={handleChangePerPage}
+              />
             </Grid>
-          </Paper>
-        )}
+
+            <Grid xs={6} sx={{ justifyContent: 'center', display: 'flex' }}>
+              <Paper sx={{ textAlign: 'center', p: 2, width: 'fit-content' }}>
+                Total Results: {resultCount} | Showing:{' '}
+                {String((currentPage - 1) * perPage)}-
+                {String(currentPage * perPage)}
+              </Paper>
+            </Grid>
+
+            <Grid xs={3} sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+              <Stack direction="row" spacing={0}>
+                {currentPage !== 1 && (
+                  <IconButton
+                    color="secondary"
+                    aria-label="add an alarm"
+                    onClick={async () => setCurrentPage(currentPage - 1)}
+                    sx={{
+                      borderRadius: '2.5em 0 0 2.5em',
+                      background: 'white',
+                      borderWidth: '1px 0 1px 1px',
+                      borderColor: 'gray',
+                      borderStyle: 'solid',
+                    }}
+                    disabled={isLoadingList}
+                  >
+                    <ArrowBackIosNewIcon />
+                  </IconButton>
+                )}
+                <FormControl fullWidth sx={{ minWidth: '5em' }}>
+                  <InputLabel id="demo-simple-select-label">
+                    Current Page
+                  </InputLabel>
+                  <Select
+                    labelId="currentPageSelect"
+                    id="current-page-select"
+                    value={String(currentPage)}
+                    label="Current Page"
+                    onChange={async (e) =>
+                      setCurrentPage(parseInt(e.target.value, 10))
+                    }
+                    sx={{ background: 'white' }}
+                    disabled={isLoadingList}
+                  >
+                    {paginationSelectOptions.map((i, j) => (
+                      <MenuItem
+                        value={i}
+                        key={[i, j].map((c) => String(c)).join('_')}
+                      >
+                        {i}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+
+                {currentPage !== pageCount && (
+                  <IconButton
+                    disabled={isLoadingList}
+                    color="secondary"
+                    aria-label="add an alarm"
+                    onClick={async () => setCurrentPage(currentPage + 1)}
+                    sx={{
+                      borderRadius: '0 2.5em 2.5em 0',
+                      background: 'white',
+                      borderWidth: '1px 1px 1px 0 ',
+                      borderStyle: 'solid',
+                      borderColor: 'gray',
+                    }}
+                  >
+                    <ArrowForwardIosIcon />
+                  </IconButton>
+                )}
+              </Stack>
+            </Grid>
+          </Grid>
+        </Paper>
 
         {/* ADVANCED FILTERS */}
         <Accordion>

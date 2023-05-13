@@ -253,8 +253,10 @@
     "history": "^5.2.0",
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
+    "react-intersection-observer": "^9.4.3",
     "react-router-dom": "^6.2.1",
     "regenerator-runtime": "^0.13.9",
+    "web-worker-hooks": "^0.5.1",
     "whois": "^2.14.0"
   },
   "devEngines": {

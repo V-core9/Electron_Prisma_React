@@ -40,9 +40,19 @@ const navConfig: NavConfigInterface = {
       url: '/domains-manager',
     },
     {
+      title: 'New Domains',
+      icon: <SettingsIcon />,
+      url: '/domains-manager-new',
+    },
+    {
       title: 'Settings',
       icon: <SettingsIcon />,
       url: '/settings',
+    },
+    {
+      title: 'Web Workers v1',
+      icon: <BarChartIcon />,
+      url: '/web-worker-example',
     },
   ],
   secondary: [
