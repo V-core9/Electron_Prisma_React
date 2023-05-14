@@ -96,11 +96,15 @@ export default function DomainsNew() {
     const startLoad = Date.now();
     setIsLoadingList(true);
     // console.log('SEARCHING', JSON.stringify(searchQ));
-    const rez = await fetchDomainsList(val, perPage, currentPage);
+    const rez = (await fetchDomainsList(
+      val,
+      perPage,
+      currentPage
+    )) as unknown as any;
     // console.log(rez);
 
     timeouts.pageFetch = setTimeout(async () => {
-      setDomains(rez?.data ? rez.data : []) as unknown as Domain[];
+      setDomains(rez?.data ? rez.data : []);
       setResultCount(rez.count);
       setIsLoadingList(false);
     }, Date.now() - startLoad);

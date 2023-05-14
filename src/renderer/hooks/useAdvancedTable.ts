@@ -1,4 +1,4 @@
-import { Dispatch, SetStateAction, useState } from 'react';
+import { useState } from 'react';
 import { Domain } from '../../types/Domain.interface';
 
 interface UseListSelectExpand {
@@ -34,7 +34,7 @@ function useListSelectExpand(
       const isActive = toggleState.indexOf(index) !== -1;
       setState(
         isActive
-          ? toggleState.filter((i) => i !== index)
+          ? toggleState.filter((i: unknown) => i !== index)
           : [...toggleState, index]
       );
     };

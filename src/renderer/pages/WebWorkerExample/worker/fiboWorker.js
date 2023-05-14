@@ -1,6 +1,5 @@
-// eslint-disable-next-line import/no-anonymous-default-export
 export default () => {
-  const fiboCalc = (numb: number) => {
+  const fiboCalc = (numb) => {
     let n1 = 0;
     let n2 = 1;
     let somme = 0;
@@ -13,12 +12,10 @@ export default () => {
       n2 = somme;
     }
 
-    const result = numb ? n2 : n1;
-    return result;
+    return somme;
   };
 
-  // eslint-disable-next-line no-restricted-globals
-  self.onmessage = (message) => {
+  onmessage = (message) => {
     const nbr = message.data;
     const result = fiboCalc(nbr);
 

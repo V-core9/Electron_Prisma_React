@@ -1,6 +1,6 @@
 // ? Pages List
 // import pages from 'renderer/pages';
-import { Suspense, lazy } from 'react';
+import { lazy } from 'react';
 
 const SamplePage = lazy(() => import('renderer/pages/SamplePage'));
 const Settings = lazy(() => import('renderer/pages/Settings'));
