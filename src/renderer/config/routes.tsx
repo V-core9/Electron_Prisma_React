@@ -1,15 +1,15 @@
 // ? Pages List
 // import pages from 'renderer/pages';
-import { lazy } from 'react';
+import lazyRetry from '../utils/lazyRetry';
 
-const SamplePage = lazy(() => import('renderer/pages/SamplePage'));
-const Settings = lazy(() => import('renderer/pages/Settings'));
-const Hello = lazy(() => import('renderer/pages/Hello'));
-const Dashboard = lazy(() => import('renderer/pages/Dashboard'));
-const NoPage = lazy(() => import('renderer/pages/Error/NoPage'));
-const Domains = lazy(() => import('renderer/pages/Domains'));
-const DomainsNew = lazy(() => import('renderer/pages/Domains/DomainsNew'));
-const WebWorkerExample = lazy(
+const SamplePage = lazyRetry(() => import('renderer/pages/SamplePage'));
+const Settings = lazyRetry(() => import('renderer/pages/Settings'));
+const Hello = lazyRetry(() => import('renderer/pages/Hello'));
+const Dashboard = lazyRetry(() => import('renderer/pages/Dashboard'));
+const NoPage = lazyRetry(() => import('renderer/pages/Error/NoPage'));
+const Domains = lazyRetry(() => import('renderer/pages/Domains'));
+const DomainsNew = lazyRetry(() => import('renderer/pages/Domains/DomainsNew'));
+const WebWorkerExample = lazyRetry(
   () => import('renderer/pages/WebWorkerExample/WebWorkerExample')
 );
 

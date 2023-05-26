@@ -1,55 +1,66 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Domain } from '../../types/Domain.interface';
 
+interface ListSelectExpandItem {
+  id: string | number;
+}
+
 interface UseListSelectExpand {
-  data: Domain[];
+  data: ListSelectExpandItem[];
   selected: unknown[];
   expanded: unknown[];
   perPage: number;
   currentPage: number;
   setPerPage: (n: number) => void;
   setCurrentPage: (n: number) => void;
-  toggleSelected: (item: Domain) => Promise<void>;
-  toggleExpanded: (item: Domain) => Promise<void>;
-  setData: (val: Domain[]) => void;
+  toggleSelected: (item: string | number) => Promise<void>;
+  toggleExpanded: (item: string | number) => Promise<void>;
+  setData: (val: ListSelectExpandItem[]) => void;
+
+  resultCount: number;
+  setResultCount: (item: number) => void;
+
+  isLoadingList: boolean;
+  setIsLoadingList: (item: boolean) => void;
 }
 
-// interface UseListSelectExpandOptions {
-//  observeIntersections?: boolean;
-// }
+function createToggler(toggleState: any, setState: any) {
+  return async (item: string | number) => {
+    const isActive = toggleState.indexOf(item) !== -1;
+    setState(
+      isActive
+        ? toggleState.filter((i: unknown) => i !== item)
+        : [...toggleState, item]
+    );
+  };
+}
 
 function useListSelectExpand(
-  initialData: Domain[] = []
-  // options: UseListSelectExpandOptions = {}
+  initialData: ListSelectExpandItem[] = []
 ): UseListSelectExpand {
-  const [list, setList] = useState<Domain[]>(initialData);
+  const [list, setList] = useState<ListSelectExpandItem[]>(initialData);
   const [selected, setSelected] = useState<unknown[]>([]);
   const [expanded, setExpanded] = useState<unknown[]>([]);
   const [perPage, setPerPage] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
 
-  function createToggler(listData: Domain[], toggleState: any, setState: any) {
-    return async (item: Domain) => {
-      const index = listData?.indexOf(item);
-      const isActive = toggleState.indexOf(index) !== -1;
-      setState(
-        isActive
-          ? toggleState.filter((i: unknown) => i !== index)
-          : [...toggleState, index]
-      );
-    };
-  }
+  const [resultCount, setResultCount] = useState<number>(0);
+  const [isLoadingList, setIsLoadingList] = useState<boolean>(false);
 
-  const toggleSelected = createToggler(list, selected, setSelected);
-  const toggleExpanded = createToggler(list, expanded, setExpanded);
+  const toggleSelected = createToggler(selected, setSelected);
+  const toggleExpanded = createToggler(expanded, setExpanded);
 
-  function setData(val: Domain[]) {
+  function setData(val: ListSelectExpandItem[]) {
     if (Array.isArray(val)) {
       setSelected([]);
       setExpanded([]);
       setList(val);
     }
   }
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [perPage]);
 
   return {
     data: list,
@@ -66,6 +77,12 @@ function useListSelectExpand(
 
     perPage,
     setPerPage,
+
+    resultCount,
+    setResultCount,
+
+    isLoadingList,
+    setIsLoadingList,
   };
 }
 

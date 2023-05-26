@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect } from 'react';
 import Accordion from '@mui/material/Accordion';
 import AccordionDetails from '@mui/material/AccordionDetails';
@@ -26,6 +27,8 @@ import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import Checkbox from '@mui/material/Checkbox';
+
+import { useInView } from 'react-hook-inview';
 
 import './domains.scss';
 
@@ -63,10 +66,108 @@ const fetchDomainsList = async (queryString = '', perPage = 5, page = 1) => {
 
 // let userInputDelayTimer: null | ReturnType<typeof setTimeout> = null;
 
+function RenderRow({
+  rowData,
+  expanded,
+  selected,
+  toggleExpanded,
+  toggleSelected,
+  printKeys,
+}: any) {
+  const { id } = rowData as Domain;
+  const isSelected = selected.indexOf(id) !== -1;
+  const isExpanded = expanded.indexOf(id) !== -1;
+  const [ref, isVisible] = useInView({
+    threshold: 0.01,
+  });
+
+  return (
+    <Paper
+      ref={ref}
+      key={id}
+      sx={{
+        width: '100%',
+        border: '1px solid #dbdbdb',
+        borderRadius: '.5em',
+        background: isExpanded ? '#EEE' : '#F0F0F0',
+        minHeight: '2em',
+      }}
+    >
+      {isVisible ? (
+        <>
+          <Grid
+            sx={{
+              // padding: '0.25em .75em',
+              borderTop: '1px solid #dbdbdb',
+              borderLeft: '1px solid #dbdbdb',
+              borderRight: '1px solid #dbdbdb',
+              borderRadius: '.5em .5em 0 0 ',
+              width: '100%',
+              display: 'flex',
+              flexDirection: 'row',
+              alignItems: 'center',
+              p: 0,
+              justifyContent: 'space-between',
+              background: isExpanded ? '#e7e7e7' : 'transparent',
+            }}
+          >
+            <Grid sx={{ maxWidth: 80 }}>
+              <Checkbox
+                inputProps={{ 'aria-label': 'Checkbox demo' }}
+                checked={isSelected}
+                onChange={() => toggleSelected(id)}
+              />
+            </Grid>
+            <Grid sx={{ flex: 1 }} key={id}>
+              {printKeys?.map((key: string | number) => {
+                return <div key={key}>{rowData[key] || ''}</div>;
+              })}
+              {/* !title ? url : title */}
+            </Grid>
+            <Grid xs={1}>
+              <IconButton
+                color="secondary"
+                aria-label="Expand Row Data"
+                onClick={() => toggleExpanded(id)}
+                sx={{
+                  borderRadius: 0,
+                  maxHeight: '24px',
+                }}
+              >
+                {isExpanded ? <ExpandMoreIcon /> : <ExpandLessIcon />}
+              </IconButton>
+            </Grid>
+          </Grid>
+          {expanded.indexOf(id) !== -1 && (
+            <Grid
+              xs={12}
+              sx={{
+                p: 1,
+                borderTop: '2px solid #dbdbdb',
+              }}
+            >
+              <div>{`Title: ${rowData?.title || '[ ❗ missing_info ]'}`}</div>
+              <div>{`Description: ${
+                rowData?.description || '[ ❗ missing_info ]'
+              }`}</div>
+              <div>{`Created: ${
+                rowData?.created_at || '[ ❗ missing_info ]'
+              }`}</div>
+              <div>{`Updated: ${
+                rowData?.updated_at || '[ ❗ missing_info ]'
+              }`}</div>
+            </Grid>
+          )}
+        </>
+      ) : (
+        ''
+      )}
+    </Paper>
+  );
+}
+
 export default function DomainsNew() {
   const [searchQ, setSearchQ] = useState<string>('');
-  const [resultCount, setResultCount] = useState<number>(0);
-  const [isLoadingList, setIsLoadingList] = useState<boolean>(false);
 
   const {
     data: domains,
@@ -83,13 +184,18 @@ export default function DomainsNew() {
 
     perPage,
     setPerPage,
+
+    resultCount,
+    setResultCount,
+
+    isLoadingList,
+    setIsLoadingList,
   } = useAdvancedTable([]);
 
   // console.warn(domains, selected, expanded, currentPage, perPage);
 
   const handleChangePerPage = (event: SelectChangeEvent) => {
     setPerPage(parseInt(event.target.value, 10));
-    setCurrentPage(1);
   };
 
   const fetch = async (val: string | undefined) => {
@@ -103,11 +209,11 @@ export default function DomainsNew() {
     )) as unknown as any;
     // console.log(rez);
 
-    timeouts.pageFetch = setTimeout(async () => {
-      setDomains(rez?.data ? rez.data : []);
-      setResultCount(rez.count);
-      setIsLoadingList(false);
-    }, Date.now() - startLoad);
+    // timeouts.pageFetch = setTimeout(async () => {
+    setDomains(rez?.data ? rez.data : []);
+    setResultCount(rez.count);
+    setIsLoadingList(false);
+    // }, Date.now() - startLoad);
   };
 
   const generateDomain = async () => {
@@ -173,17 +279,6 @@ export default function DomainsNew() {
           height: '100%',
         }}
       >
-        <Grid container spacing={2} alignItems="center">
-          <Grid xs={6}>__</Grid>
-          <Grid
-            xs={6}
-            textAlign="end"
-            sx={{ display: 'flex', justifyContent: 'flex-end', gap: '.5em' }}
-          >
-            <NewDomain />
-          </Grid>
-        </Grid>
-
         <Paper
           sx={{
             p: 1.25,
@@ -218,6 +313,13 @@ export default function DomainsNew() {
                   }
                 />
               </Box>
+            </Grid>
+            <Grid
+              xs={6}
+              textAlign="end"
+              sx={{ display: 'flex', justifyContent: 'flex-end', gap: '.5em' }}
+            >
+              <NewDomain />
             </Grid>
           </Grid>
 
@@ -259,85 +361,17 @@ export default function DomainsNew() {
                 background: '#f0f0f0',
               }}
             >
-              {domains?.map((domain, index) => {
-                const { id, url, title, description } = domain as Domain;
-                const isSelected = selected.indexOf(index) !== -1;
-                const isExpanded = expanded.indexOf(index) !== -1;
-                return (
-                  <Paper
-                    key={crypto.randomUUID()}
-                    sx={{
-                      width: '100%',
-                      border: '1px solid #dbdbdb',
-                      borderRadius: '.5em',
-                      background: isExpanded ? '#EEE' : '#F0F0F0',
-                    }}
-                  >
-                    <Grid
-                      sx={{
-                        // padding: '0.25em .75em',
-                        borderTop: '1px solid #dbdbdb',
-                        borderLeft: '1px solid #dbdbdb',
-                        borderRight: '1px solid #dbdbdb',
-                        borderRadius: '.5em .5em 0 0 ',
-                        width: '100%',
-                        display: 'flex',
-                        flexDirection: 'row',
-                        alignItems: 'center',
-                        p: 0,
-                        justifyContent: 'space-between',
-                        background: isExpanded ? '#e7e7e7' : 'transparent',
-                      }}
-                    >
-                      <Grid sx={{ maxWidth: 80 }}>
-                        <Checkbox
-                          inputProps={{ 'aria-label': 'Checkbox demo' }}
-                          checked={isSelected}
-                          onChange={() => toggleSelected(domain)}
-                        />
-                      </Grid>
-                      <Grid sx={{ flex: 1 }} key={id}>
-                        {!title ? url : title}
-                      </Grid>
-                      <Grid xs={1}>
-                        <IconButton
-                          color="secondary"
-                          aria-label="Expand Row Data"
-                          onClick={() => toggleExpanded(domain)}
-                          sx={{
-                            borderRadius: 0,
-                            maxHeight: '24px',
-                          }}
-                        >
-                          {isExpanded ? <ExpandMoreIcon /> : <ExpandLessIcon />}
-                        </IconButton>
-                      </Grid>
-                    </Grid>
-                    {expanded.indexOf(index) !== -1 && (
-                      <Grid
-                        xs={12}
-                        sx={{
-                          p: 1,
-                          borderTop: '2px solid #dbdbdb',
-                        }}
-                      >
-                        <div>{`Title: ${
-                          domain?.title || '[ ❗ missing_info ]'
-                        }`}</div>
-                        <div>{`Description: ${
-                          domain?.description || '[ ❗ missing_info ]'
-                        }`}</div>
-                        <div>{`Created: ${
-                          domain?.created_at || '[ ❗ missing_info ]'
-                        }`}</div>
-                        <div>{`Updated: ${
-                          domain?.updated_at || '[ ❗ missing_info ]'
-                        }`}</div>
-                      </Grid>
-                    )}
-                  </Paper>
-                );
-              })}
+              {domains?.map((domain) => (
+                <RenderRow
+                  rowData={domain}
+                  expanded={expanded}
+                  selected={selected}
+                  toggleExpanded={toggleExpanded}
+                  toggleSelected={toggleSelected}
+                  printKeys={['url', 'id']}
+                  key={domain.id}
+                />
+              ))}
             </Grid>
           )}
 
@@ -442,7 +476,9 @@ export default function DomainsNew() {
             >
               Generate Entry
             </Button>
-            <Typography>{JSON.stringify(domains, null, 3)}</Typography>
+            <pre>
+              {JSON.stringify({ domains, expanded, selected }, null, 2)}
+            </pre>
           </AccordionDetails>
         </Accordion>
       </Box>
